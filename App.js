@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
@@ -66,8 +66,20 @@ class ISS extends React.Component {
 
     let response = await this.getData(true, timeString)
     this.setState({ data: response })
-    
+
 	};
+
+  getLocation = async (num) => {
+    let data = this.state.data[num]
+    let location = await this.getCity(data)
+    let newData = this.state.data.map((item, index) => {
+      if (num === index) {
+        return {...item, location: location[0]}
+      }
+      return item
+    })
+    this.setState({ data: newData })
+  }
 
 	render() {
 		return (
@@ -86,7 +98,12 @@ class ISS extends React.Component {
             <FlatList
               data={this.state.data}
               renderItem={({ item, index }) => (
-                <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
+                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ flexDirection: 'row' }}>
+                  <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
+                  {item.location !== undefined &&
+                  <Text>City: {item.location.name} {item.location.city} {item.location.country}</Text>
+                  }
+                  </TouchableOpacity>
               )}
               keyExtractor={(item) => item.latitude}
             />
