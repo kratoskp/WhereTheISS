@@ -5,6 +5,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
 import Moment from 'moment';
 import * as Location from 'expo-location';
+import MapView, { Polyline } from 'react-native-maps';
 
 let url = 'https://api.wheretheiss.at/v1/satellites/25544/positions'
 class ISS extends React.Component {
@@ -84,7 +85,7 @@ class ISS extends React.Component {
 	render() {
 		return (
       <NativeBaseProvider>
-        <View style={{ flex: 1, paddingVertical: 100, alignItems: 'center' }}>
+        <View style={{ flex: 1, paddingVertical: 50, alignItems: 'center' }}>
           {(this.state.currentLocation !== '' && this.state.currentLocation !== undefined) ?
             <View>
             <Text>Current Location: {this.state.currentLocation.name} {this.state.currentLocation.city} {this.state.currentLocation.country}</Text>
@@ -107,6 +108,24 @@ class ISS extends React.Component {
               )}
               keyExtractor={(item) => item.latitude}
             />
+            <MapView 
+              style={{ height: 500, width: 500 }}
+            >
+              <Polyline 
+                coordinates={[
+                  { latitude: 37.8025259, longitude: -122.4351431 },
+			{ latitude:  49.06787771343, longitude: -102.24701351878 },
+			{ latitude: 37.7665248, longitude: -122.4161628 },
+			{ latitude: 37.7734153, longitude: -122.4577787 },
+			{ latitude: 37.7948605, longitude: -122.4596065 },
+			{ latitude: 37.8025259, longitude: -122.4351431 }
+                ]}
+                strokeColor='#7F0000'
+                strokeWidth={6}
+                // lineCap="round"
+                lineDashPattern={[1]}
+              />
+              </MapView>
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
