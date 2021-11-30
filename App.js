@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
@@ -13,7 +13,8 @@ class ISS extends React.Component {
 		this.state = {
 			pickerOpened: false,
       date: new Date(),
-      currentLocation: ''
+      currentLocation: '',
+      data: []
 		};
 	}
 	closePicker = () => this.setState({ pickerOpened: false })
@@ -27,15 +28,16 @@ class ISS extends React.Component {
   }
 
   getCity = async (coordinate) => {
+    // console.log(coordinate)
     let response = await Location.reverseGeocodeAsync({ latitude: coordinate.latitude, longitude: coordinate.longitude })
-    // console.log(coordinate, response)
+    // console.log(response)
     return response;
   }
 
-  getData = async (dateTime) => {
+  getData = async (dateTime, multi) => {
     let response = await axios.get(url, {
       params: {
-        timestamps : Moment(dateTime).unix()
+        timestamps : multi !== undefined ? multi : Moment(dateTime).unix()
       },
     })
     return response.data;
@@ -43,6 +45,28 @@ class ISS extends React.Component {
 
 	handleDatePicked = async (value) => {
 		this.setState({ pickerOpened: false, date: value });
+    let timeString = ''
+
+    // add time before selected to string
+    for (let i = 3600; i > 0; i = i - 600) {
+      if (timeString === '') {
+        timeString = Moment(value).unix() - i
+      } else {
+        timeString = timeString + ',' + (Moment(value).unix() - i)
+      }
+    }
+
+    // add time selected into string
+    timeString = timeString + ',' + Moment(value).unix()
+
+    // add time after selected to string 
+    for (let i = 600; i <= 3600; i = i + 600) {
+        timeString = timeString + ',' + (Moment(value).unix() + i)
+    }
+
+    let response = await this.getData(true, timeString)
+    this.setState({ data: response })
+    
 	};
 
 	render() {
@@ -59,11 +83,18 @@ class ISS extends React.Component {
           <View 
             style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Button onPress={() => this.setState({ pickerOpened: true })}>Choose date and time</Button>
+            <FlatList
+              data={this.state.data}
+              renderItem={({ item, index }) => (
+                <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
+              )}
+              keyExtractor={(item) => item.latitude}
+            />
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
             mode="datetime"
-            onConfirm={this.handleDatePicked}
+            onConfirm={(e) => this.handleDatePicked(e)}
             onCancel={() => this.setState({ pickerOpened: false })}
             maximumDate={new Date()}
           />
