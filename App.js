@@ -20,13 +20,15 @@ class ISS extends React.Component {
 
   componentDidMount = async () => {
     Location.requestForegroundPermissionsAsync();
-    let response = await this.getData(this.state.date)
+    let response = await this.getData(new Date())
     let location = await this.getCity(response[0])
+    // console.log(response, location)
     this.setState({ currentLocation: location[0] })
   }
 
   getCity = async (coordinate) => {
     let response = await Location.reverseGeocodeAsync({ latitude: coordinate.latitude, longitude: coordinate.longitude })
+    // console.log(coordinate, response)
     return response;
   }
 
@@ -35,7 +37,7 @@ class ISS extends React.Component {
       params: {
         timestamps : Moment(dateTime).unix()
       },
-    }) 
+    })
     return response.data;
   }
 
@@ -47,8 +49,12 @@ class ISS extends React.Component {
 		return (
       <NativeBaseProvider>
         <View style={{ flex: 1, paddingVertical: 100, alignItems: 'center' }}>
-          {this.state.currentLocation !== '' &&
+          {(this.state.currentLocation !== '' && this.state.currentLocation !== undefined) ?
+            <View>
             <Text>Current Location: {this.state.currentLocation.name} {this.state.currentLocation.city} {this.state.currentLocation.country}</Text>
+            </View>
+            :
+            <Text>Current Location: Somewhere over the sea</Text>
           }
           <View 
             style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
