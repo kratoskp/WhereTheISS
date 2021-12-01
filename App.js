@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
@@ -15,7 +15,8 @@ class ISS extends React.Component {
 			pickerOpened: false,
       date: new Date(),
       currentLocation: '',
-      data: []
+      data: [],
+      map: false
 		};
 	}
 	closePicker = () => this.setState({ pickerOpened: false })
@@ -97,33 +98,52 @@ class ISS extends React.Component {
             <Text>Current Location: Somewhere over the sea</Text>
           }
           <View 
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 8 }}>
             <Button onPress={() => this.setState({ pickerOpened: true })}>Choose date and time</Button>
+            {this.state.data.length !== 0 &&
+              <Text>Tap time to reveal location</Text>
+            }
             <FlatList
               data={this.state.data}
               renderItem={({ item, index }) => (
-                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ flexDirection: 'row' }}>
-                  <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
+                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ alignItems: 'center' }}>
+                  <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>{Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm')}</Text>
                   {item.location !== undefined &&
-                  <Text>Location: {item.location.name} {item.location.city} {item.location.country}</Text>
+                  <Text>{item.location.name} {item.location.city} {item.location.country}</Text>
                   }
                   </TouchableOpacity>
               )}
               keyExtractor={(item) => item.latitude}
+              ItemSeparatorComponent={() => <View style={{ padding: 4 }}/>}
+              style={{ paddingTop: 8 }}
+              showsVerticalScrollIndicator={false}
             />
             {this.state.data.length !== 0 &&
-              <MapView 
-                style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
-              >
-                <Polyline 
-                  coordinates={this.state.data}
-                  strokeColor='#7F0000'
-                  strokeWidth={6}
-                  // lineCap="round"
-                  lineDashPattern={[1]}
-                />
-              </MapView>
+              <View style={{ marginTop: 30 }}>
+              <Button onPress={() => this.setState({ map: true })}>Show ISS path Visualisation</Button>
+              </View>
             }
+            <Modal
+              animationType="slide"
+              visible={this.state.map}
+              onRequestClose={() => {
+                this.setState({ map: false })
+              }}
+              style={{ backgroundColor: 'white' }}
+            >
+                <MapView 
+                  style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
+                >
+                  <Polyline 
+                    coordinates={this.state.data}
+                    strokeColor='#7F0000'
+                    strokeWidth={6}
+                    // lineCap="round"
+                    lineDashPattern={[1]}
+                  />
+                </MapView>
+                <Button onPress={() => this.setState({ map: false })}>Close Map</Button>
+            </Modal>
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
