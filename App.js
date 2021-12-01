@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
@@ -8,6 +8,8 @@ import * as Location from 'expo-location';
 import MapView, { Polyline } from 'react-native-maps';
 
 let url = 'https://api.wheretheiss.at/v1/satellites/25544/positions'
+let weatherUrl = 'https://api.openweathermap.org/data/2.5/onecall'
+let weatherApiKey = '2e9eacfbac7533c00f933a85d1e60bee'
 class ISS extends React.Component {
 	constructor(props) {
 		super(props);
@@ -15,7 +17,8 @@ class ISS extends React.Component {
 			pickerOpened: false,
       date: new Date(),
       currentLocation: '',
-      data: []
+      data: [],
+      map: false
 		};
 	}
 	closePicker = () => this.setState({ pickerOpened: false })
@@ -70,15 +73,27 @@ class ISS extends React.Component {
 
 	};
 
+  getWeather = async (coordinate) => {
+    let response = await axios.get(weatherUrl, {
+      params: {
+        lat: coordinate.latitude,
+        lon: coordinate.longitude,
+        appid: weatherApiKey
+      },
+    })
+    return response.data.current.weather[0].description;
+  }
+
   getLocation = async (num) => {
     let data = this.state.data[num]
     let location = await this.getCity(data)
+    let weather = await this.getWeather(data)
     let newData = this.state.data.map((item, index) => {
       if (num === index) {
         if (location[0] === undefined) {
-          return {...item, location: { name: 'Somewhere over the sea' }}
+          return {...item, location: { name: 'Somewhere over the sea' }, weather: weather}
         }
-        return {...item, location: location[0]}
+        return {...item, location: location[0], weather}
       }
       return item
     })
@@ -97,33 +112,52 @@ class ISS extends React.Component {
             <Text>Current Location: Somewhere over the sea</Text>
           }
           <View 
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 8 }}>
             <Button onPress={() => this.setState({ pickerOpened: true })}>Choose date and time</Button>
+            {this.state.data.length !== 0 &&
+              <Text>Tap time to reveal location</Text>
+            }
             <FlatList
               data={this.state.data}
               renderItem={({ item, index }) => (
-                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ flexDirection: 'row' }}>
-                  <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
+                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ alignItems: 'center' }}>
+                  <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>{Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm')}</Text>
                   {item.location !== undefined &&
-                  <Text>Location: {item.location.name} {item.location.city} {item.location.country}</Text>
+                  <Text>{item.location.name} {item.location.city} {item.location.country} / {item.weather}</Text>
                   }
                   </TouchableOpacity>
               )}
               keyExtractor={(item) => item.latitude}
+              ItemSeparatorComponent={() => <View style={{ padding: 4 }}/>}
+              style={{ paddingTop: 8 }}
+              showsVerticalScrollIndicator={false}
             />
             {this.state.data.length !== 0 &&
-              <MapView 
-                style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
-              >
-                <Polyline 
-                  coordinates={this.state.data}
-                  strokeColor='#7F0000'
-                  strokeWidth={6}
-                  // lineCap="round"
-                  lineDashPattern={[1]}
-                />
-              </MapView>
+              <View style={{ marginTop: 30 }}>
+              <Button onPress={() => this.setState({ map: true })}>Show ISS path Visualisation</Button>
+              </View>
             }
+            <Modal
+              animationType="slide"
+              visible={this.state.map}
+              onRequestClose={() => {
+                this.setState({ map: false })
+              }}
+              style={{ backgroundColor: 'white' }}
+            >
+                <MapView 
+                  style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
+                >
+                  <Polyline 
+                    coordinates={this.state.data}
+                    strokeColor='#7F0000'
+                    strokeWidth={6}
+                    // lineCap="round"
+                    lineDashPattern={[1]}
+                  />
+                </MapView>
+                <Button onPress={() => this.setState({ map: false })}>Close Map</Button>
+            </Modal>
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
