@@ -8,6 +8,8 @@ import * as Location from 'expo-location';
 import MapView, { Polyline } from 'react-native-maps';
 
 let url = 'https://api.wheretheiss.at/v1/satellites/25544/positions'
+let weatherUrl = 'https://api.openweathermap.org/data/2.5/onecall'
+let weatherApiKey = '2e9eacfbac7533c00f933a85d1e60bee'
 class ISS extends React.Component {
 	constructor(props) {
 		super(props);
@@ -71,15 +73,27 @@ class ISS extends React.Component {
 
 	};
 
+  getWeather = async (coordinate) => {
+    let response = await axios.get(weatherUrl, {
+      params: {
+        lat: coordinate.latitude,
+        lon: coordinate.longitude,
+        appid: weatherApiKey
+      },
+    })
+    return response.data.current.weather[0].description;
+  }
+
   getLocation = async (num) => {
     let data = this.state.data[num]
     let location = await this.getCity(data)
+    let weather = await this.getWeather(data)
     let newData = this.state.data.map((item, index) => {
       if (num === index) {
         if (location[0] === undefined) {
-          return {...item, location: { name: 'Somewhere over the sea' }}
+          return {...item, location: { name: 'Somewhere over the sea' }, weather: weather}
         }
-        return {...item, location: location[0]}
+        return {...item, location: location[0], weather}
       }
       return item
     })
@@ -109,7 +123,7 @@ class ISS extends React.Component {
                 <TouchableOpacity onPress={() => this.getLocation(index)} style={{ alignItems: 'center' }}>
                   <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>{Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm')}</Text>
                   {item.location !== undefined &&
-                  <Text>{item.location.name} {item.location.city} {item.location.country}</Text>
+                  <Text>{item.location.name} {item.location.city} {item.location.country} / {item.weather}</Text>
                   }
                   </TouchableOpacity>
               )}
