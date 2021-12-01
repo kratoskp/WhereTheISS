@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
@@ -75,6 +75,9 @@ class ISS extends React.Component {
     let location = await this.getCity(data)
     let newData = this.state.data.map((item, index) => {
       if (num === index) {
+        if (location[0] === undefined) {
+          return {...item, location: { name: 'Somewhere over the sea' }}
+        }
         return {...item, location: location[0]}
       }
       return item
@@ -102,30 +105,25 @@ class ISS extends React.Component {
                 <TouchableOpacity onPress={() => this.getLocation(index)} style={{ flexDirection: 'row' }}>
                   <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>Time: {Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm:ss')}</Text>
                   {item.location !== undefined &&
-                  <Text>City: {item.location.name} {item.location.city} {item.location.country}</Text>
+                  <Text>Location: {item.location.name} {item.location.city} {item.location.country}</Text>
                   }
                   </TouchableOpacity>
               )}
               keyExtractor={(item) => item.latitude}
             />
-            <MapView 
-              style={{ height: 500, width: 500 }}
-            >
-              <Polyline 
-                coordinates={[
-                  { latitude: 37.8025259, longitude: -122.4351431 },
-			{ latitude:  49.06787771343, longitude: -102.24701351878 },
-			{ latitude: 37.7665248, longitude: -122.4161628 },
-			{ latitude: 37.7734153, longitude: -122.4577787 },
-			{ latitude: 37.7948605, longitude: -122.4596065 },
-			{ latitude: 37.8025259, longitude: -122.4351431 }
-                ]}
-                strokeColor='#7F0000'
-                strokeWidth={6}
-                // lineCap="round"
-                lineDashPattern={[1]}
-              />
+            {this.state.data.length !== 0 &&
+              <MapView 
+                style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
+              >
+                <Polyline 
+                  coordinates={this.state.data}
+                  strokeColor='#7F0000'
+                  strokeWidth={6}
+                  // lineCap="round"
+                  lineDashPattern={[1]}
+                />
               </MapView>
+            }
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
