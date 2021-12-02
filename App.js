@@ -4,12 +4,11 @@ import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
 import Moment from 'moment';
-import * as Location from 'expo-location';
 import MapView, { Polyline } from 'react-native-maps';
 
-let url = 'https://api.wheretheiss.at/v1/satellites/25544/positions'
-let weatherUrl = 'https://api.openweathermap.org/data/2.5/onecall'
-let weatherApiKey = '2e9eacfbac7533c00f933a85d1e60bee'
+let url = 'https://wheretheiss.000webhostapp.com/iss.php'
+let locationUrl = 'https://wheretheiss.000webhostapp.com/location.php'
+let weatherUrl = 'https://wheretheiss.000webhostapp.com/weather.php'
 class ISS extends React.Component {
 	constructor(props) {
 		super(props);
@@ -24,7 +23,6 @@ class ISS extends React.Component {
 	closePicker = () => this.setState({ pickerOpened: false })
 
   componentDidMount = async () => {
-    Location.requestForegroundPermissionsAsync();
     let response = await this.getData(new Date())
     let location = await this.getCity(response[0])
     // console.log(response, location)
@@ -33,18 +31,24 @@ class ISS extends React.Component {
 
   getCity = async (coordinate) => {
     // console.log(coordinate)
-    let response = await Location.reverseGeocodeAsync({ latitude: coordinate.latitude, longitude: coordinate.longitude })
-    // console.log(response)
-    return response;
+    let response = await axios.get(locationUrl, {
+      params: {
+        latitude : coordinate.latitude,
+        longitude: coordinate.longitude
+      },
+    })
+    let location = response.data.responses.features[0].properties
+    return [{city: location.city, country: location.country, name: location.name }];
   }
 
   getData = async (dateTime, multi) => {
     let response = await axios.get(url, {
       params: {
-        timestamps : multi !== undefined ? multi : Moment(dateTime).unix()
+        time : multi !== undefined ? multi : Moment(dateTime).unix()
       },
     })
-    return response.data;
+    return response.data.responses;
+    
   }
 
 	handleDatePicked = async (value) => {
@@ -77,11 +81,10 @@ class ISS extends React.Component {
     let response = await axios.get(weatherUrl, {
       params: {
         lat: coordinate.latitude,
-        lon: coordinate.longitude,
-        appid: weatherApiKey
+        lon: coordinate.longitude
       },
     })
-    return response.data.current.weather[0].description;
+    return response.data.responses.current.weather[0].description;
   }
 
   getLocation = async (num) => {
