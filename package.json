@@ -13,7 +13,6 @@
     "@react-native-community/datetimepicker": "3.5.2",
     "axios": "^0.24.0",
     "expo": "~43.0.2",
-    "expo-location": "~13.0.4",
     "expo-status-bar": "~1.1.0",
     "moment": "^2.29.1",
     "native-base": "^3.2.2",
