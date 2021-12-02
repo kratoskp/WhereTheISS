@@ -1,14 +1,12 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity, Dimensions, Modal } from 'react-native';
+import { View, FlatList, StyleSheet, Text, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { NativeBaseProvider, Button  } from 'native-base';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
 import Moment from 'moment';
 import MapView, { Polyline } from 'react-native-maps';
 
-let url = 'https://wheretheiss.000webhostapp.com/iss.php'
-let locationUrl = 'https://wheretheiss.000webhostapp.com/location.php'
-let weatherUrl = 'https://wheretheiss.000webhostapp.com/weather.php'
+let url = 'https://wheretheiss.000webhostapp.com/api.php'
 class ISS extends React.Component {
 	constructor(props) {
 		super(props);
@@ -17,28 +15,15 @@ class ISS extends React.Component {
       date: new Date(),
       currentLocation: '',
       data: [],
-      map: false
+      map: false,
+      loading: false
 		};
 	}
 	closePicker = () => this.setState({ pickerOpened: false })
 
   componentDidMount = async () => {
     let response = await this.getData(new Date())
-    let location = await this.getCity(response[0])
-    // console.log(response, location)
-    this.setState({ currentLocation: location[0] })
-  }
-
-  getCity = async (coordinate) => {
-    // console.log(coordinate)
-    let response = await axios.get(locationUrl, {
-      params: {
-        latitude : coordinate.latitude,
-        longitude: coordinate.longitude
-      },
-    })
-    let location = response.data.responses.features[0].properties
-    return [{city: location.city, country: location.country, name: location.name }];
+    this.setState({ currentLocation: response[0] })
   }
 
   getData = async (dateTime, multi) => {
@@ -71,37 +56,11 @@ class ISS extends React.Component {
     for (let i = 600; i <= 3600; i = i + 600) {
         timeString = timeString + ',' + (Moment(value).unix() + i)
     }
-
+    this.setState({ loading: true })
     let response = await this.getData(true, timeString)
-    this.setState({ data: response })
+    this.setState({ data: response, loading: false })
 
 	};
-
-  getWeather = async (coordinate) => {
-    let response = await axios.get(weatherUrl, {
-      params: {
-        lat: coordinate.latitude,
-        lon: coordinate.longitude
-      },
-    })
-    return response.data.responses.current.weather[0].description;
-  }
-
-  getLocation = async (num) => {
-    let data = this.state.data[num]
-    let location = await this.getCity(data)
-    let weather = await this.getWeather(data)
-    let newData = this.state.data.map((item, index) => {
-      if (num === index) {
-        if (location[0] === undefined) {
-          return {...item, location: { name: 'Somewhere over the sea' }, weather: weather}
-        }
-        return {...item, location: location[0], weather}
-      }
-      return item
-    })
-    this.setState({ data: newData })
-  }
 
 	render() {
 		return (
@@ -109,7 +68,7 @@ class ISS extends React.Component {
         <View style={{ flex: 1, paddingVertical: 50, alignItems: 'center' }}>
           {(this.state.currentLocation !== '' && this.state.currentLocation !== undefined) ?
             <View>
-            <Text>Current Location: {this.state.currentLocation.name} {this.state.currentLocation.city} {this.state.currentLocation.country}</Text>
+            <Text>Current Location: {this.state.currentLocation.features[0].properties.name} {this.state.currentLocation.features[0].properties.state} {this.state.currentLocation.features[0].properties.country}</Text>
             </View>
             :
             <Text>Current Location: Somewhere over the sea</Text>
@@ -120,15 +79,16 @@ class ISS extends React.Component {
             {this.state.data.length !== 0 &&
               <Text>Tap time to reveal location</Text>
             }
+            {this.state.loading === true &&
+            <ActivityIndicator color="#FF0000"/>
+            }
             <FlatList
               data={this.state.data}
               renderItem={({ item, index }) => (
-                <TouchableOpacity onPress={() => this.getLocation(index)} style={{ alignItems: 'center' }}>
+                <View style={{ alignItems: 'center' }}>
                   <Text style={{ fontWeight: index === 6 ? 'bold' : '100' }}>{Moment.unix(item.timestamp).format('DD/MM/YYYY hh:mm')}</Text>
-                  {item.location !== undefined &&
-                  <Text>{item.location.name} {item.location.city} {item.location.country} / {item.weather}</Text>
-                  }
-                  </TouchableOpacity>
+                  <Text>{item.features[0].properties.name} {item.features[0].properties.city} {item.features[0].properties.country} / {item.current.weather[0].description}</Text>
+                  </View>
               )}
               keyExtractor={(item) => item.latitude}
               ItemSeparatorComponent={() => <View style={{ padding: 4 }}/>}
