@@ -25,7 +25,12 @@ export default function DateTimePickerModal({
   }
 
   if (Platform.OS === 'android') {
-    const handleValueChange = (_event, selectedDate) => {
+    const handleChange = (event, selectedDate) => {
+      if (event.type === 'dismissed' || !selectedDate) {
+        onCancel();
+        return;
+      }
+
       if (androidMode === 'date') {
         const nextDate = new Date(selectedDate);
         nextDate.setHours(draftDate.getHours(), draftDate.getMinutes());
@@ -43,8 +48,7 @@ export default function DateTimePickerModal({
       <DateTimePicker
         maximumDate={maximumDate}
         mode={androidMode}
-        onDismiss={onCancel}
-        onValueChange={handleValueChange}
+        onChange={handleChange}
         value={draftDate}
       />
     );
@@ -57,8 +61,11 @@ export default function DateTimePickerModal({
           <DateTimePicker
             maximumDate={maximumDate}
             mode="datetime"
-            onDismiss={onCancel}
-            onValueChange={(_event, selectedDate) => setDraftDate(selectedDate)}
+            onChange={(_event, selectedDate) => {
+              if (selectedDate) {
+                setDraftDate(selectedDate);
+              }
+            }}
             value={draftDate}
           />
           <View style={styles.actions}>

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo/AppEntry",
   "engines": {
-    "node": ">=20.16.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "start": "expo start",
@@ -13,21 +13,21 @@
     "prebuild": "expo prebuild"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~57.0.15",
+    "@expo/metro-runtime": "~6.1.2",
     "@gluestack-style/react": "^1.0.57",
     "@gluestack-ui/config": "^1.1.20",
     "@gluestack-ui/themed": "^1.1.73",
-    "@react-native-community/datetimepicker": "9.1.0",
+    "@react-native-community/datetimepicker": "8.4.4",
     "axios": "^1.20.0",
-    "expo": "~57.0.19",
-    "expo-splash-screen": "~57.0.8",
+    "expo": "~54.0.37",
+    "expo-splash-screen": "~31.0.13",
     "moment": "^2.30.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-maps": "1.27.2",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-svg": "15.15.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-maps": "1.20.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-svg": "15.12.1",
     "react-native-web": "~0.21.0",
     "tslib": "^2.8.1"
   },
