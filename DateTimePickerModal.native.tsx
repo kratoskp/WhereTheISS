@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Platform, StyleSheet, View } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  type DateTimePickerChangeEvent,
+} from '@react-native-community/datetimepicker';
 import { Button, ButtonText } from '@gluestack-ui/themed';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
+
+import { COPY } from './constants';
+import type { DateTimePickerModalProps } from './types';
+
+type PickerMode = 'date' | 'time';
 
 export default function DateTimePickerModal({
   date,
@@ -9,9 +16,9 @@ export default function DateTimePickerModal({
   maximumDate,
   onCancel,
   onConfirm,
-}) {
+}: DateTimePickerModalProps) {
   const [draftDate, setDraftDate] = useState(date);
-  const [androidMode, setAndroidMode] = useState('date');
+  const [androidMode, setAndroidMode] = useState<PickerMode>('date');
 
   useEffect(() => {
     if (isVisible) {
@@ -20,12 +27,13 @@ export default function DateTimePickerModal({
     }
   }, [date, isVisible]);
 
-  if (!isVisible) {
-    return null;
-  }
+  if (!isVisible) return null;
 
   if (Platform.OS === 'android') {
-    const handleValueChange = (_event, selectedDate) => {
+    const handleValueChange = (
+      _event: DateTimePickerChangeEvent,
+      selectedDate: Date
+    ) => {
       if (androidMode === 'date') {
         const nextDate = new Date(selectedDate);
         nextDate.setHours(draftDate.getHours(), draftDate.getMinutes());
@@ -63,10 +71,10 @@ export default function DateTimePickerModal({
           />
           <View style={styles.actions}>
             <Button action="secondary" onPress={onCancel}>
-              <ButtonText>Cancel</ButtonText>
+              <ButtonText>{COPY.cancel}</ButtonText>
             </Button>
             <Button onPress={() => onConfirm(draftDate)}>
-              <ButtonText>Confirm</ButtonText>
+              <ButtonText>{COPY.confirm}</ButtonText>
             </Button>
           </View>
         </View>
@@ -76,19 +84,11 @@ export default function DateTimePickerModal({
 }
 
 const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
+  actions: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end' },
   backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(23, 35, 31, 0.72)',
     flex: 1,
     justifyContent: 'flex-end',
   },
-  content: {
-    backgroundColor: '#fff',
-    gap: 16,
-    padding: 20,
-  },
+  content: { backgroundColor: '#FFFFFF', gap: 18, padding: 24 },
 });
