@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, ActivityIndicator, Dimensions, Modal } from 'react-native';
-import { NativeBaseProvider, Button  } from 'native-base';
+import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { Button, ButtonText, GluestackUIProvider } from '@gluestack-ui/themed';
+import { config } from '@gluestack-ui/config';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
 import Moment from 'moment';
-import MapView, { Polyline } from 'react-native-maps';
+import MapModal from './MapModal';
 
 let url = 'https://wheretheiss.000webhostapp.com/api.php'
 class ISS extends React.Component {
@@ -22,8 +23,12 @@ class ISS extends React.Component {
 	closePicker = () => this.setState({ pickerOpened: false })
 
   componentDidMount = async () => {
-    let response = await this.getData(new Date())
-    this.setState({ currentLocation: response[0] })
+    try {
+      let response = await this.getData(new Date())
+      this.setState({ currentLocation: response[0] })
+    } catch (error) {
+      console.error('Unable to load the current ISS location.', error)
+    }
   }
 
   getData = async (dateTime, multi) => {
@@ -57,14 +62,19 @@ class ISS extends React.Component {
         timeString = timeString + ',' + (Moment(value).unix() + i)
     }
     this.setState({ loading: true })
-    let response = await this.getData(true, timeString)
-    this.setState({ data: response, loading: false })
+    try {
+      let response = await this.getData(true, timeString)
+      this.setState({ data: response, loading: false })
+    } catch (error) {
+      console.error('Unable to load the selected ISS path.', error)
+      this.setState({ loading: false })
+    }
 
 	};
 
 	render() {
 		return (
-      <NativeBaseProvider>
+  <GluestackUIProvider config={config}>
         <View style={{ flex: 1, paddingVertical: 50, alignItems: 'center' }}>
           {(this.state.currentLocation !== '' && this.state.currentLocation !== undefined) ?
             <View>
@@ -75,7 +85,9 @@ class ISS extends React.Component {
           }
           <View 
             style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 8 }}>
-            <Button onPress={() => this.setState({ pickerOpened: true })}>Choose date and time</Button>
+            <Button onPress={() => this.setState({ pickerOpened: true })}>
+              <ButtonText>Choose date and time</ButtonText>
+            </Button>
             {this.state.data.length !== 0 &&
               <Text>Tap time to reveal location</Text>
             }
@@ -97,30 +109,16 @@ class ISS extends React.Component {
             />
             {this.state.data.length !== 0 &&
               <View style={{ marginTop: 30 }}>
-              <Button onPress={() => this.setState({ map: true })}>Show ISS path Visualisation</Button>
+              <Button onPress={() => this.setState({ map: true })}>
+                <ButtonText>Show ISS path Visualisation</ButtonText>
+              </Button>
               </View>
             }
-            <Modal
-              animationType="slide"
+            <MapModal
               visible={this.state.map}
-              onRequestClose={() => {
-                this.setState({ map: false })
-              }}
-              style={{ backgroundColor: 'white' }}
-            >
-                <MapView 
-                  style={{ height: Dimensions.get('screen').height / 2, width: Dimensions.get('screen').width }}
-                >
-                  <Polyline 
-                    coordinates={this.state.data}
-                    strokeColor='#7F0000'
-                    strokeWidth={6}
-                    // lineCap="round"
-                    lineDashPattern={[1]}
-                  />
-                </MapView>
-                <Button onPress={() => this.setState({ map: false })}>Close Map</Button>
-            </Modal>
+              data={this.state.data}
+              onClose={() => this.setState({ map: false })}
+            />
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
@@ -130,7 +128,7 @@ class ISS extends React.Component {
             maximumDate={new Date()}
           />
         </View>
-      </NativeBaseProvider>
+      </GluestackUIProvider>
 		);
 	}
 }
