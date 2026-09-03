@@ -2,12 +2,11 @@ import React from 'react';
 import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { Button, ButtonText, GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import axios from 'axios';
+import DateTimePickerModal from './DateTimePickerModal';
 import Moment from 'moment';
 import MapModal from './MapModal';
+import { getIssData } from './issApi';
 
-let url = 'https://wheretheiss.000webhostapp.com/api.php'
 class ISS extends React.Component {
 	constructor(props) {
 		super(props);
@@ -32,13 +31,8 @@ class ISS extends React.Component {
   }
 
   getData = async (dateTime, multi) => {
-    let response = await axios.get(url, {
-      params: {
-        time : multi !== undefined ? multi : Moment(dateTime).unix()
-      },
-    })
-    return response.data.responses;
-    
+    const timestamps = multi !== undefined ? multi : Moment(dateTime).unix()
+    return getIssData(timestamps)
   }
 
 	handleDatePicked = async (value) => {
@@ -122,7 +116,7 @@ class ISS extends React.Component {
           </View>
           <DateTimePickerModal
             isVisible={this.state.pickerOpened}
-            mode="datetime"
+            date={this.state.date}
             onConfirm={(e) => this.handleDatePicked(e)}
             onCancel={() => this.setState({ pickerOpened: false })}
             maximumDate={new Date()}
